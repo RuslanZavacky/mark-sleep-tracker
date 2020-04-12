@@ -2,6 +2,12 @@ const { GoogleSpreadsheet } = require('google-spreadsheet');
 const { formatToTimeZone, convertToTimeZone, parseFromString } = require('date-fns-timezone');
 const differenceInSeconds = require('date-fns/differenceInSeconds');
 
+const GOOGLE_SHEET_KEY = process.env.GOOGLE_SHEET_KEY;
+const GOOGLE_SERVICE_ACCOUNT_EMAIL = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL;
+const GOOGLE_SERVICE_PRIVATE_KEY = process.env.GOOGLE_SERVICE_PRIVATE_KEY;
+const TIME_ZONE = process.env.TIME_ZONE || 'Europe/London';
+const DATE_FORMAT = process.env.DATE_FORMAT || 'YYYY-MM-DD HH:mm:ss';
+
 const timeDifference = (start, finish) => {
   const diffTime = differenceInSeconds(finish, start);
 
@@ -15,11 +21,11 @@ const timeDifference = (start, finish) => {
 };
 
 const handler = async (event) => {
-  const doc = new GoogleSpreadsheet(process.env.GOOGLE_SHEET_KEY);
+  const doc = new GoogleSpreadsheet(GOOGLE_SHEET_KEY);
 
   const credentials = {
-    client_email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-    private_key: process.env.GOOGLE_SERVICE_PRIVATE_KEY.replace(/\|\|\|/g, `\n`),
+    client_email: GOOGLE_SERVICE_ACCOUNT_EMAIL,
+    private_key: GOOGLE_SERVICE_PRIVATE_KEY.replace(/\|\|\|/g, `\n`),
   };
 
   await doc.useServiceAccountAuth(credentials);
@@ -30,8 +36,8 @@ const handler = async (event) => {
 
   if (event.clickType === 'SINGLE') {
     await sheet.addRow({
-      'Week Day': formatToTimeZone(new Date(), 'dddd', { timeZone: 'Europe/London' }),
-      Time: formatToTimeZone(new Date(), 'YYYY-MM-DD HH:mm:ss', { timeZone: 'Europe/London' }),
+      'Week Day': formatToTimeZone(new Date(), 'dddd', { timeZone: TIME_ZONE }),
+      Time: formatToTimeZone(new Date(), DATE_FORMAT, { timeZone: TIME_ZONE }),
       Type: 'Asleep',
       Duration: '',
     });
@@ -48,12 +54,12 @@ const handler = async (event) => {
       }
     }
 
-    const lastAsleepTime = parseFromString(lastAsleepRow.Time, 'YYYY-MM-DD HH:mm:ss');
-    const currentDate = convertToTimeZone(new Date(), { timeZone: 'Europe/London' });
+    const lastAsleepTime = parseFromString(lastAsleepRow.Time, DATE_FORMAT);
+    const currentDate = convertToTimeZone(new Date(), { timeZone: TIME_ZONE });
 
     await sheet.addRow({
-      'Week Day': formatToTimeZone(new Date(), 'dddd', { timeZone: 'Europe/London' }),
-      Time: formatToTimeZone(new Date(), 'YYYY-MM-DD HH:mm:ss', { timeZone: 'Europe/London' }),
+      'Week Day': formatToTimeZone(new Date(), 'dddd', { timeZone: TIME_ZONE }),
+      Time: formatToTimeZone(new Date(), DATE_FORMAT, { timeZone: TIME_ZONE }),
       Type: 'Woke up',
       Duration: timeDifference(lastAsleepTime, currentDate),
     });
@@ -63,7 +69,3 @@ const handler = async (event) => {
 };
 
 exports.handler = handler;
-
-// (async () => {
-//   await handler({ clickType: 'DOUBLE' });
-// })();

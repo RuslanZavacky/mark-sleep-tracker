@@ -1,4 +1,4 @@
 #!/bin/bash
 
-rm mark-sleep-tracker.zip
-zip -r mark-sleep-tracker.zip -@ < zip.lst
+rm dist.zip
+zip -r dist.zip -@ < zip.lst
